@@ -4,7 +4,7 @@ const inquirer = require("inquirer")
 
 const table = new Table({
   head: ["ID", "Item", "Department", "Price", "Stock"],
-  colWidths: [10, 30, 30, 30, 30]
+  colWidths: [10, 30, 30, 10, 10]
 })
 
 const connection = mysql.createConnection({
@@ -15,6 +15,24 @@ const connection = mysql.createConnection({
   database: "bamazon"
 })
 
+emptyCart = () => {
+  inquirer
+    .prompt({
+      type: "list",
+      message: "Would you like to purchase another item?",
+      choices: ["Yes", "No"],
+      name: "shopAgain"
+    })
+    .then(res => {
+      if (res.shopAgain === "Yes") {
+        mainMenu()
+      } else {
+        console.log("Thank you for shopping with us. Have a great day!")
+        connection.end()
+      }
+    })
+}
+
 checkoutCart = (userInputId, userInputQuantity) => {
   connection.query(
     "SELECT * FROM products WHERE item_id = " + userInputId,
@@ -23,7 +41,7 @@ checkoutCart = (userInputId, userInputQuantity) => {
       if (userInputQuantity <= res[0].stock_quantity) {
         const totalCost = res[0].price * userInputQuantity
         console.log(
-          "This is a confirmation message that your order is in stock and will ship out shortly to you!"
+          "\nThis is a confirmation message that your order is in stock and will ship out shortly to you!"
         )
         console.log(
           "The total cost for " +
@@ -32,7 +50,7 @@ checkoutCart = (userInputId, userInputQuantity) => {
             res[0].product_name +
             " = $" +
             totalCost +
-            ". Thank you for shopping with us!"
+            ".\n"
         )
         connection.query(
           "UPDATE products SET stock_quantity = stock_quantity - " +
@@ -40,12 +58,12 @@ checkoutCart = (userInputId, userInputQuantity) => {
             " WHERE item_id = " +
             userInputId
         )
-        mainMenu()
+        emptyCart()
       } else {
         console.log(
-          "You order appears to be out of stock, we apologize for the inconvenience."
+          "\nYou order appears to be out of stock, we apologize for the inconvenience.\n"
         )
-        mainMenu()
+        emptyCart()
       }
     }
   )
